@@ -1,19 +1,35 @@
 # Ailang OS
 
-Userspace for a Linux machine. The kernel is borrowed. PID 1, login, the service daemon, the installer, and the virtual file tree are in this repository.
+Userspace runtime environment for Ailang, a Linux-based operating system. This repository contains core system components including process initialization (PID 1), authentication, service management, system installation, and the virtual file system implementation.
 
-The desktop is HTML tags parsed by Auckland, and the window clients are `Applications/*_ipc.ailang`. Those stay in [Ailang-Self-Hosting-](https://github.com/AiLang-Author/Ailang-Self-Hosting-) because they import the compiler libraries. This tree does not build by itself.
+## Architecture Overview
 
-## Layout next to the compiler
+### Core Components
 
-Clone both repositories as siblings:
+- **PID 1 (Init System)**: System initialization and process lifecycle management
+- **Authentication**: User login and credential management  
+- **Service Daemon**: Background service orchestration and lifecycle
+- **Installer**: System installation and configuration tooling
+- **Virtual File Tree**: VFS abstraction layer for system resources
+
+### Related Components
+
+Desktop and windowing clients are maintained separately in [Ailang-Self-Hosting-](https://github.com/AiLang-Author/Ailang-Self-Hosting-):
+- Desktop environment (HTML-based UI parsed by Auckland renderer)
+- Window manager and IPC clients (`Applications/*_ipc.ailang`)
+
+## Development Setup
+
+### Repository Layout
+
+Clone this repository alongside the Ailang compiler:
 
 ```
 /home/bob/Ailang-OS
 /home/bob/Ailang-Self-Hosting-
 ```
 
-The compiler tree points here with symlinks:
+The compiler repository references this repository via symlinks:
 
 ```
 OS                  -> ../Ailang-OS
@@ -21,6 +37,23 @@ docs/aos            -> ../../Ailang-OS/docs/aos
 board/ailang_os     -> ../../Ailang-OS/board/ailang_os
 ```
 
-Build and boot from the compiler tree: `./build_image.sh`, `./run_aos.sh`. What the code actually does today is `CODE_STATUS.md`.
+### Building and Running
 
-License: Sean Collins Software License (SCSL), same file as the compiler repository.
+From the compiler tree:
+
+```bash
+./build_image.sh    # Build OS image
+./run_aos.sh        # Boot system
+```
+
+### Status
+
+For current implementation status and feature coverage, see [CODE_STATUS.md](CODE_STATUS.md).
+
+## Documentation
+
+Complete technical documentation is available in the `docs/` directory.
+
+## License
+
+Sean Collins Software License (SCSL) — see LICENSE file for details.
