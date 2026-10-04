@@ -2,102 +2,149 @@
 
 Ailang OS is the userspace runtime for the Ailang operating system. This repository contains the system bootstrap and service layer: PID 1, login flow, service daemon, installer, schema/bootstrap logic, and the virtual filesystem/tree implementation.
 
-This is not a generic desktop environment repository. The goal is to provide the OS runtime and service substrate on top of a Linux kernel, with the graphical desktop and application clients kept in the separate self-hosting compiler/runtime repository.
+**Design principles:** minimal abstraction, direct kernel interaction, straightforward execution paths. The codebase prioritizes clarity and efficiency over generality. Every function does one thing. Every module owns one piece of the system.
 
 ## Scope
 
-The repository covers the OS runtime and platform primitives:
+This repository owns the OS runtime and platform primitives:
 
 - `Init.ailang`: PID 1 bootstrap and early system startup
 - `Login.ailang`: login flow and authentication entrypoints
-- `ServiceDaemon.ailang`: service registry / orchestration daemon
-- `Installer.ailang`: system installation and provisioning workflow
+- `ServiceDaemon.ailang`: service registry and orchestration
+- `Installer.ailang`: system installation and provisioning
 - `Schema.ailang`: database schema and system metadata model
-- `FileTree.ailang`: virtual file tree representation
-- `UUIDStore.ailang`: object/blob storage and identity model
-- `UI/`: desktop and presentation layer assets
+- `FileTree.ailang`: virtual file tree implementation
+- `UUIDStore.ailang`: object/blob storage layer
+- `UI/`: early desktop and presentation assets
 
-The desktop shell and IPC client applications live in the companion repository, [Ailang-Self-Hosting-](https://github.com/AiLang-Author/Ailang-Self-Hosting-), as separate user-interface concerns.
+**Note on UI/desktop:** Desktop shell and window clients are currently transitioning. As this moves to the self-hosting compiler tree (Ailang-Self-Hosting-), the `UI/` directory and related components will be relocated. The OS runtime remains the stable core.
 
 ## Design model
 
-Ailang OS follows a small set of operating principles:
-
-- Bootstrap-first: system services are initialized from PID 1 and then brought up in dependency order.
-- Database-backed configuration: runtime state, services, and settings are represented in a PostgreSQL-backed model rather than ad hoc config files alone.
-- Virtual filesystem as a first-class OS primitive: the file tree is modeled as structured objects with blob-backed storage.
-- Minimal kernel dependency: the kernel is borrowed; this repo owns the userspace runtime and system orchestration.
-- UI separated from core OS: window clients and HTML-based desktop behavior live outside this repository.
+- **Low abstraction**: direct syscalls, minimal wrapper layers
+- **Single responsibility**: each component owns one subsystem
+- **Database-backed state**: runtime configuration lives in PostgreSQL, not ad hoc config files
+- **Virtual filesystem as primitive**: the file tree is a first-class OS data structure
+- **Kernel-minimal**: the kernel is borrowed; this repo owns userspace orchestration
+- **Direct execution**: boot sequence is straightforward: init → services → desktop
 
 ## Repository layout
 
-```text
+```
 Ailang-OS/
-├── Init.ailang
-├── Login.ailang
-├── ServiceDaemon.ailang
-├── Installer.ailang
-├── Schema.ailang
-├── FileTree.ailang
-├── UUIDStore.ailang
-├── TestInit.ailang
-├── TestLogin.ailang
-├── TestSchema.ailang
-├── TestFileTree.ailang
-├── TestUUIDStore.ailang
-├── UI/
-├── board/
+├── Init.ailang              — PID 1 bootstrap
+├── Login.ailang             — Authentication entrypoint
+├── ServiceDaemon.ailang     — Service registry and orchestration
+├── Installer.ailang         — System provisioning
+├── Schema.ailang            — Database schema and metadata
+├── FileTree.ailang          — Virtual file tree
+├── UUIDStore.ailang         — Blob storage and identity
+├── Test*.ailang             — Component unit tests
+├── UI/                      — Desktop/presentation (transitioning)
+├── board/                   — Board-specific configs (Buildroot overlay)
 ├── docs/
-├── BUILD.md
-├── BUILD_REQUIREMENTS.md
-├── CODE_STATUS.md
-├── LICENSE
-├── README.md
-└── FileTree.ailang
+├── BUILD.md                 — Build and deployment architecture
+├── BUILD_REQUIREMENTS.md    — Toolchain, QEMU, platform config
+├── CODE_STATUS.md           — Implementation status (current, not planned)
+└── LICENSE
 ```
 
-## Documentation map
+## Documentation
 
-The repository includes focused engineering documentation alongside the runtime source:
+Read these in order:
 
-- `BUILD.md` — build and deployment architecture, disk image layout, and boot flow
-- `BUILD_REQUIREMENTS.md` — QEMU/EFI requirements, toolchain assumptions, and platform configuration
-- `CODE_STATUS.md` — current implementation status and what is working vs. deferred work
-- `docs/aos/DEVICE_INTERFACES.md` — device and interface assumptions
-- `docs/aos/FIRMWARE.md` — firmware expectations and hardware integration notes
-- `docs/aos/PORTING_FOREIGN.md` — portability and foreign-system integration notes
-- `docs/aos/SANDBOX_JAIL.md` — sandbox and confinement design notes
-- `docs/aos/emergency.md` — emergency/recovery guidance
-- `docs/aos/phase1-rls-pgcrypto-login.md` — login and crypto milestone notes
-- `docs/aos/phase2-luks-secure-boot.md` — future secure boot and disk protection direction
+1. **`CODE_STATUS.md`** — What is implemented right now. Start here if you're evaluating the codebase.
+2. **`BUILD.md`** — Architecture, disk layout, boot sequence, deployment options
+3. **`BUILD_REQUIREMENTS.md`** — Toolchain dependencies, QEMU/EFI setup, PostgreSQL config
+4. **`docs/aos/`** — Deep dives on specific subsystems:
+   - `DEVICE_INTERFACES.md` — Hardware assumptions and I/O handling
+   - `FIRMWARE.md` — Firmware loading and boot requirements
+   - `SANDBOX_JAIL.md` — Sandbox and application confinement (v0/v1/v2)
+   - `emergency.md` — Recovery and emergency procedures
+   - `phase1-rls-pgcrypto-login.md` — Login and encryption milestone
+   - `phase2-luks-secure-boot.md` — Disk encryption and secure boot roadmap
+   - `PORTING_FOREIGN.md` — Integration with non-Ailang userspace
 
-## Build and execution
-
-The project is designed to be built from the compiler/self-hosting environment alongside the Ailang toolchain. The build and boot workflow is documented in `BUILD.md` and `BUILD_REQUIREMENTS.md`.
-
-Typical flow:
+## Build and boot
 
 ```bash
-./build_image.sh
-./run_aos.sh
+./build_image.sh           # Build disk image (16 GB)
+./run_aos.sh               # Boot in QEMU with KVM
 ```
 
-For QEMU and EFI boot requirements, see:
+QEMU environment:
+- EFI boot (OVMF, no bootloader needed)
+- 2 GB RAM, 2 vCPU
+- bochs-display framebuffer (1152×864)
+- SSH forwarded to localhost:2222
+- PostgreSQL forwarded to localhost:15432
 
-```bash
-./build_image.sh --qemu
-```
+See `BUILD_REQUIREMENTS.md` for detailed QEMU/KVM configuration and platform assumptions.
 
-## Current status
+## Current implementation status
 
-This repository is still an active engineering project. Implementation status is intentionally tracked in `CODE_STATUS.md` rather than implied by the README. If you are evaluating the repo, treat that file as the source of truth for what is implemented today.
+**Implemented and working:**
+- PID 1 bootstrap (filesystem mounts, device init, PostgreSQL startup)
+- Login flow (evdev keyboard, credential validation, session init)
+- Service daemon (registry, autostart, basic lifecycle)
+- Database schema and bootstrap
+- Virtual file tree and blob storage (operations layer)
+- Framebuffer display and basic UI rendering
+
+**Deferred:**
+- Sandbox v1 and v2 (user namespaces, overlayfs, FUSE — kernel config pending)
+- Full disk encryption (LUKS integration in progress)
+- Secure boot (signed kernel + TPM)
+- Application privilege separation (currently all services run as root)
+- Package manager (schema exists; seeding incomplete)
+
+See `CODE_STATUS.md` for comprehensive status and open issues by priority.
+
+## Architecture snapshot
+
+**Boot flow:**
+1. UEFI firmware loads `EFI/BOOT/BOOTX64.EFI` (Linux bzImage with EFI stub)
+2. Kernel mounts rootfs and starts PID 1
+3. Init mounts early filesystems, loads kernel modules, starts PostgreSQL
+4. Service daemon bootstraps schema and launches autostart services
+5. Display server initializes and waits for IPC connections
+6. Desktop ready
+
+**Data model:**
+- Services registered in `services` table with binary path, autostart flag, priority
+- Virtual filesystem in `files` table (parent_id tree structure) with blob storage
+- User accounts in `users` table with hashed credentials
+- Runtime state in `service_status`, `sessions`, `settings`
+- UI configuration in `themes` and theme_values
+
+**Subsystem boundaries:**
+- `Init` owns boot sequence and early init; once services start, it becomes a reaper
+- `Login` is standalone auth entry point (can run before desktop)
+- `ServiceDaemon` owns registry and lifecycle; applications are black boxes to it
+- `FileTree` provides virtual FS abstraction; storage is PostgreSQL-backed blob store
+- UI components talk to services via Unix socket IPC
+
+## Development workflow
+
+Typically:
+1. Edit `.ailang` source in this repo
+2. Compile with the self-hosting compiler from Ailang-Self-Hosting-
+3. Deploy to rootfs overlay and rebuild disk image
+4. Test in QEMU or on physical hardware
+
+All binaries are cross-compiled; nothing runs natively on the host. The AILang compiler is the only upstream dependency.
+
+## Repository maintainability
+
+- No magic. Every function is explicit; no implicit behavior in macros or metaprogramming.
+- Tests are co-located with source: `Init.ailang` + `TestInit.ailang`
+- Documentation is versioned alongside code (not in a wiki or separate repo)
+- Status is canonical in `CODE_STATUS.md`, not issues or roadmaps
 
 ## License
 
-This project is licensed under the Sean Collins Software License (SCSL). The exact license file is `LICENSE`.
+Sean Collins Software License (SCSL). See `LICENSE`.
 
-## Relationship to the wider Ailang system
+---
 
-Ailang OS provides the operating system runtime and platform services. The UI, application clients, and self-hosting toolchain live separately. This split keeps the OS runtime independent from the presentation layer while preserving a single system architecture.
-
-If you are looking for the desktop environment or window app definitions, refer to [Ailang-Self-Hosting-](https://github.com/AiLang-Author/Ailang-Self-Hosting-).
+The goal is to make this repo a reference for how to build a minimal, direct operating system userspace. No layers of abstraction. No "framework" overhead. Just the primitives you need, organized cleanly.
