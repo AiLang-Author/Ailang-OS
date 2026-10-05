@@ -20,6 +20,10 @@ This repository owns the OS runtime and platform primitives:
 - `config/`: desktop HTML, keymap, and the boot profile the image build copies
 - `app_icons/`, `app_icons_tvg/`: launcher icon sources
 - `boot/`: EFI startup line for the live image
+- `build_image.sh`, `run_aos.sh`, `deploy.sh`: image build, QEMU boot, and SSH deploy
+- `tools/screenshot.sh`, `tools/bundle_foreign.py`: framebuffer capture and foreign-ELF library copy
+- `images/`: June 2026 live image (`ailang_os_live.img.xz`, not stored in git) and its checksum
+- `UI/logos/`: raster AOS start icons
 
 Window-client programs (`Applications/*_ipc.ailang`) stay in [Ailang-Self-Hosting-](https://github.com/AiLang-Author/Ailang-Self-Hosting-). They import the display libraries. Clone the two repositories as siblings. The compiler tree keeps the old paths as symlinks:
 
@@ -32,9 +36,15 @@ config                     -> ../Ailang-OS/config
 app_icons                  -> ../Ailang-OS/app_icons
 app_icons_tvg              -> ../Ailang-OS/app_icons_tvg
 boot                       -> ../Ailang-OS/boot
+build_image.sh             -> ../Ailang-OS/build_image.sh
+run_aos.sh                 -> ../Ailang-OS/run_aos.sh
+deploy.sh                  -> ../Ailang-OS/deploy.sh
+CONTRIBUTING.md            -> ../Ailang-OS/CONTRIBUTING.md
+tools/screenshot.sh        -> ../../Ailang-OS/tools/screenshot.sh
+tools/bundle_foreign.py    -> ../../Ailang-OS/tools/bundle_foreign.py
 ```
 
-Build and boot from the compiler tree, where `./ailang.x` and those symlinks are.
+`build_image.sh` and `deploy.sh` follow those symlinks into this repo, then switch back to the compiler checkout to compile.
 
 ## Design model
 
@@ -89,7 +99,7 @@ Read these in order:
 
 ## Build and boot
 
-From the compiler checkout:
+`build_image.sh`, `run_aos.sh`, and `deploy.sh` live in this repo. They switch into the sibling compiler checkout, where `./ailang.x` and the window clients are. `tools/screenshot.sh` grabs the target framebuffer. `tools/bundle_foreign.py` copies shared libraries for a foreign ELF. The June 2026 live image is `images/ailang_os_live.img.xz`.
 
 ```bash
 ./build_image.sh           # Build disk image (16 GB)

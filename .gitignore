@@ -1,0 +1,4 @@
+# Release disk images stay on disk under images/. The checksum is tracked.
+*.img
+*.img.xz
+*.img.gz
