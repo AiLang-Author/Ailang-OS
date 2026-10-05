@@ -15,9 +15,26 @@ This repository owns the OS runtime and platform primitives:
 - `Schema.ailang`: database schema and system metadata model
 - `FileTree.ailang`: virtual file tree implementation
 - `UUIDStore.ailang`: object/blob storage layer
-- `UI/`: early desktop and presentation assets
+- `UI/`: logo and desktop screenshot
+- `Design-Language- Refrence/`: desktop mockups (deskbar, tracker, shell, palette, type)
+- `config/`: desktop HTML, keymap, and the boot profile the image build copies
+- `app_icons/`, `app_icons_tvg/`: launcher icon sources
+- `boot/`: EFI startup line for the live image
 
-**Note on UI/desktop:** Desktop shell and window clients are currently transitioning. As this moves to the self-hosting compiler tree (Ailang-Self-Hosting-), the `UI/` directory and related components will be relocated. The OS runtime remains the stable core.
+Window-client programs (`Applications/*_ipc.ailang`) stay in [Ailang-Self-Hosting-](https://github.com/AiLang-Author/Ailang-Self-Hosting-). They import the display libraries. Clone the two repositories as siblings. The compiler tree keeps the old paths as symlinks:
+
+```
+OS                         -> ../Ailang-OS
+docs/aos                   -> ../../Ailang-OS/docs/aos
+board/ailang_os            -> ../../Ailang-OS/board/ailang_os
+Design-Language- Refrence  -> ../Ailang-OS/Design-Language- Refrence
+config                     -> ../Ailang-OS/config
+app_icons                  -> ../Ailang-OS/app_icons
+app_icons_tvg              -> ../Ailang-OS/app_icons_tvg
+boot                       -> ../Ailang-OS/boot
+```
+
+Build and boot from the compiler tree, where `./ailang.x` and those symlinks are.
 
 ## Design model
 
@@ -40,7 +57,12 @@ Ailang-OS/
 ├── FileTree.ailang          — Virtual file tree
 ├── UUIDStore.ailang         — Blob storage and identity
 ├── Test*.ailang             — Component unit tests
-├── UI/                      — Desktop/presentation (transitioning)
+├── UI/                      — Logo and desktop screenshot
+├── Design-Language- Refrence/ — Desktop mockups
+├── config/                  — Desktop HTML and boot profile
+├── app_icons/               — Launcher icon sources
+├── app_icons_tvg/           — Launcher icons converted for the packer
+├── boot/                    — EFI startup line
 ├── board/                   — Board-specific configs (Buildroot overlay)
 ├── docs/
 ├── BUILD.md                 — Build and deployment architecture
@@ -66,6 +88,8 @@ Read these in order:
    - `PORTING_FOREIGN.md` — Integration with non-Ailang userspace
 
 ## Build and boot
+
+From the compiler checkout:
 
 ```bash
 ./build_image.sh           # Build disk image (16 GB)
